@@ -1,0 +1,453 @@
+<header>
+	<cfif not isPrint>
+		<nav>
+			<a href="index.cfm?p=101&rqst=#rqst#">Back to Inventory</a>
+			<a href="index.cfm?p=#p#&rqst=#rqst#&aId=#aId#&isPrint=1&hideLogs=1&hideThumbnails=1" target="_blank">Printable Version</a>
+		</nav>
+
+		<div class="social-media">
+			<a href="http://twitter.com/share" class="twitter-share-button" data-count="none">Tweet</a><script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
+		</div>
+	</cfif>
+
+	<div>
+		<cfif not isPrint>
+			<h1><strong>Aircraft Detail -Copy</strong></h1>
+		</cfif>
+			<p>#aircraftString#</p>
+			<p>#dollarFormat(getAC.listPrice)#</p>
+	</div>
+<hr>
+</header>
+
+<div>
+	<cfquery name="getAircraftImages" datasource="#dsn_wildblue#">
+		SELECT aircraftImagePK, fileName, fileNameTNMed
+		FROM aircraftImage
+		WHERE aircraftFK = <cfqueryparam value="#aId#" cfsqltype="cf_sql_integer">
+		AND active = 1
+		AND imgVisible = 1
+		ORDER BY aircraftImagePK
+
+	</cfquery>
+
+	<cfif isPrint and getAircraftImages.recordCount gt 0>
+		<cfif hideThumbnails>
+			<a href="index.cfm?p=#p#&rqst=#rqst#&aId=#aId#&isPrint=1&hideLogs=#hideLogs#&hideThumbnails=0">Show Images</a>
+		<cfelse>
+			<a href="index.cfm?p=#p#&rqst=#rqst#&aId=#aId#&isPrint=1&hideLogs=#hideLogs#&hideThumbnails=1">Hide Images</a>
+		</cfif>
+	</cfif>
+
+	<section>
+		<cfif not hideThumbnails>
+			<cfif getAircraftImages.recordCount gt 0>
+				<h2>Images</h2>
+
+				<!-- Display the selected Image -->
+				<cfif isDefined("imgId")>
+					<cfquery name="getSelectedImage" datasource="#dsn_wildblue#">
+						SELECT fileName, aircraftImagePK
+						FROM aircraftImage
+						WHERE active = 1
+						AND imgVisible = 1
+						AND aircraftImagePK = <cfqueryparam value="#imgId#" cfsqltype="cf_sql_integer">
+					</cfquery>
+					<cfelse>
+						<!--- Display the aircraft's primary image as the selected image by default. --->
+						<cfquery name="getSelectedImage" datasource="#dsn_wildblue#">
+							SELECT ai.fileName, aircraftImagePK
+							FROM aircraftImage ai JOIN aircraft a ON ai.aircraftImagePK = a.primaryImageFK
+							WHERE ai.active = 1
+							AND ai.imgVisible = 1
+							AND a.aircraftPK = <cfqueryparam value="#aId#" cfsqltype="cf_sql_integer">
+						</cfquery>
+
+						<cfif not hideThumbnails>
+							<cfif getAircraftImages.recordCount gt 0>
+								<cfif getSelectedImage.recordCount gt 0>
+									<cfset selectedImagePK = getSelectedImage.aircraftImagePK>
+									<cfset imglocation =  aircraftImageDirectory & "/" & aId & "/" & getSelectedImage.fileName>
+									<cfimage action="read" name="myImage" source="#imgLocation#">
+
+										<div>
+											<cfimage action="WRITETOBROWSER" source="#myImage#" format="jpg"/>
+										</div>
+
+										<div>
+											<h3>Zoom Tips</h3>
+											<ul>
+												<li>Use the scroll bar below the image to zoom.</li>
+												<li>Try scrolling your wheelmouse while pointing to zoom.</li>
+												<li>Click the magnifying glass to view the full image.</li>
+											</ul>
+										</div>
+								</cfif>
+							</cfif>
+
+							<cfloop query="getAircraftImages">
+								<cfset imgLocation = aircraftImageDirectory & "/" & aId & "/" & fileNameTNMed>
+								<cfimage action="read" name="myImage" source="#imgLocation#">
+								<cfset sq_size = 160>
+
+								<cfif (getAircraftImages.currentRow mod 4) eq 1>
+								</cfif>
+
+								<a id="thumbnails#aircraftImagePK#" class=""<cfif aircraftImagePK eq selectedImagePK>border<cfelse>noBorder</cfif>"
+									href="index.cfm?p=#p#&rqst=#rqst#&aId=#aId#&imgId=#aircraftImagePK#&isPrint=#isPrint#&hideLogs=#hideLogs#&hideThumbnails=#hideThumbnails#"
+									onmouseover="highlightImage('thumbnails#aircraftImagePK#')" onmouseout="cancelHighlightImage('thumbnails#aircraftImagePK#')">
+									<cfimage action="WRITETOBROWSER" source="#myImage#" format="jpg"/>
+								</a>
+
+								<cfif (getAircraftImages.currentRow mod 4) eq 0 and getAircraftImages.currentRow neq getAircraftImages.recordCount>
+								</cfif>
+							</cfloop>
+
+							<cfif getAircraftImages.recordCount gt 0>
+							</cfif>
+						</cfif>
+
+				</cfif>
+			</cfif>
+		</cfif>
+	</section>
+
+	<section>
+
+	</section>
+</div>
+
+<hr>
+<hr>
+<hr>
+
+<div align="center" style="width:100%;">
+
+	<div style="padding:10px;">
+		<!--- Detail here --->
+		<table style="margin:auto; width:100%;">
+
+			<tr>
+				<td colspan="4" align="center">
+					<span class="font3"><b>Aircraft Specifications</b></span>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="4" align="center">
+					<table>
+						<tr>
+							<td width="115px">
+								<span class="font"><b>Manufacturer:</b></span>
+							</td>
+							<td width="115px">
+								<span class="font">#getAC.manufacturer#</span>
+							</td>
+							<td width="115px">
+								<span class="font"><b>Model:</b></span>
+							</td>
+							<td width="115px">
+								<span class="font">#getAC.model#</span>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<span class="font"><b>Year:</b></span>
+							</td>
+							<td>
+								<span class="font">#getAC.yearMade#</span>
+							</td>
+							<td>
+								<span class="font"><b>Condition:</b></span>
+							</td>
+							<td>
+								<span class="font">#getAC.condition#</span>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<span class="font"><b>Serial Number:</b></span>
+							</td>
+							<td>
+								<span class="font">#getAC.serial#</span>
+							</td>
+							<td>
+								<span class="font"><b>Registration:</b></span>
+							</td>
+							<td>
+								<span class="font">#getAC.registration#</span>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<span class="font"><b>Location:</b></span>
+							</td>
+							<td>
+								<span class="font">#getAC.currentLocation#</span>
+							</td>
+							<td>
+								<span class="font"><b>Number of Seats:</b></span>
+							</td>
+							<td>
+								<span class="font">#getAC.seats#</span>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<span class="font"><b>Year Painted:</b></span>
+							</td>
+							<td>
+								<span class="font">#getAC.yearPainted#</span>
+							</td>
+							<td>
+								<span class="font"><b>Year Interior:</b></span>
+							</td>
+							<td>
+								<span class="font">#getAC.yearInterior#</span>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<span class="font"><b>Time Engine:</b></span>
+							</td>
+							<td>
+								<span class="font">#numberFormat(getAC.engineTime, ",")#</span>
+							</td>
+							<cfif getAC.engineTime2 neq 0>
+								<td>
+									<span class="font"><b>Time Engine 2:</b></span>
+								</td>
+								<td>
+									<span class="font">#numberFormat(getAC.engineTime2, ",")#</span>
+								</td>
+							</cfif>
+						</tr>
+						<tr>
+							<td>
+								<span class="font"><b>Time Airframe:</b></span>
+							</td>
+							<td>
+								<span class="font">#numberFormat(getAC.frameTime, ",")#</span>
+							</td>
+						</tr>
+						<cfif getAC.damageHist eq 1>
+							<tr>
+								<td valign="top">
+									<span class="font"><b>Damage History:</b></span>
+								</td>
+								<td colspan="3">
+									<span class="font">#getAC.damageNotes#<br /></span>
+								</td>
+							</tr>
+						</cfif>
+						<cfif getAC.logs eq 1>
+							<tr>
+								<td valign="top">
+									<span class="font"><b>Logs:</b></span>
+								</td>
+								<td colspan="3">
+									<span class="font">#getAC.logsNotes#<br /></span>
+								</td>
+							</tr>
+						</cfif>
+					</table>
+				</td>
+			</tr>
+			<tr>
+
+				<td colspan="4" align="center">
+				<!---<hr />--->
+				</td>
+				<td>&nbsp;</td>
+			</tr>
+			<cfquery name="getLogs" datasource="#dsn_wildblue#">
+				SELECT al.aircraftLogPK, al.filename, al.description as logDescription, lt.description as logType
+				FROM aircraftLog al JOIN logType lt ON al.logTypeFK = lt.logTypePK
+				WHERE al.aircraftFK = <cfqueryparam value="#getAC.aircraftPK#" cfsqltype="cf_sql_integer">
+				AND al.active = 1
+				AND al.logVisible = 1
+			</cfquery>
+			<cfif getLogs.recordCount gt 0>
+				<cfif isPrint>
+					<tr>
+						<td colspan="4" align="left">
+					<cfif hideLogs>
+						<a href="index.cfm?p=#p#&rqst=#rqst#&aId=#aId#&isPrint=1&hideThumbnails=#hideThumbnails#&hideLogs=0">Show Logs</a>
+					<cfelse>
+						<a href="index.cfm?p=#p#&rqst=#rqst#&aId=#aId#&isPrint=1&hideThumbnails=#hideThumbnails#&hideLogs=1">Hide Logs</a>
+					</cfif>
+						</td>
+					<tr>
+				</cfif>
+				<cfif not hideLogs>
+					<tr>
+						<td colspan="4" align="center">
+							<span class="font3"><b>Aircraft Logs</b></span>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="4" align="center">
+							<table>
+								<tr>
+									<td width="125px">
+										<span class="font"><b>Log Type</b></span>
+									</td>
+									<td width="125px">
+										<span class="font"><b>Description</b></span>
+									</td>
+									<td width="125px">
+										<span class="font"><b>Download</b></span>
+									</td>
+								</tr>
+								<cfloop query="getLogs">
+									<tr>
+										<td class="font">#getLogs.logType#</td>
+										<td class="font">#getLogs.logDescription#</td>
+										<td class="font">
+											<a href="javascript: downloadLog('#getLogs.aircraftLogPK#')">Download</a>
+										</td>
+									</tr>
+								</cfloop>
+							</table>
+						</td>
+					</tr>
+				</cfif>
+
+				<tr>
+					<td colspan="4" align="center">
+					<!---<hr />--->
+					</td>
+					<td>&nbsp;</td>
+				</tr>
+
+			</cfif>
+			<tr>
+				<td colspan="4" align="center">
+					<span class="font3"><b>Sales Information</b></span>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="4" align="center">
+					<table>
+						<tr>
+							<td width="80px">
+								<span class="font"><b>Price:</b></span>
+							</td>
+							<td width="80px">
+								<span class="font">#dollarFormat(getAC.listPrice)#</span>
+							</td>
+							<td>&nbsp;
+
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<span class="font"><b>Date Listed:</b></span>
+							</td>
+							<td>
+								<span class="font">#dateFormat(getAC.dateListed,"mm/dd/yyyy")#</span>
+							</td>
+						</tr>
+						<cfif trim(getAC.comments) neq "">
+							<cfset comments = getAC.comments>
+							<cfset comments = replace(comments,"<p>","","ALL")>
+							<cfset comments = replace(comments,"</p>","<br>","ALL")>
+							<tr>
+								<td valign="top">
+									<span class="font"><b>Comments:</b></span>
+								</td>
+								<td colspan="3">
+									<span class="font">#comments#</span>
+								</td>
+							</tr>
+						</cfif>
+						<cfquery name="getInspec" datasource="#dsn_wildblue#">
+							SELECT inspectionsPK, inspectionsDesc
+							FROM   inspection
+							WHERE  active = 1
+							AND inspectionsPK = <cfqueryparam value="#getAC.inspection#" cfsqltype="cf_sql_integer">
+						</cfquery>
+						<cfif getInspec.recordCount eq 1>
+							<tr>
+								<td>
+									<span class="font"><b>Inspections:</b></span>
+								</td>
+								<td>
+									<span class="font">#getInspec.inspectionsDesc#</span>
+								</td>
+							</tr>
+						</cfif>
+						<cfif trim(getAC.upgrades) neq "">
+							<!--- Switch <p></p> for <br> so that we don't experience double line breaks. --->
+							<cfset upgrades = getAC.upgrades>
+							<cfset upgrades = replace(upgrades,"<p>","","ALL")>
+							<cfset upgrades = replace(upgrades,"</p>","<br>","ALL")>
+							<tr>
+								<td valign="top">
+									<span class="font"><b>Upgrades:</b></span>
+								</td>
+								<td colspan="3">
+									<span class="font">#upgrades#</span>
+								</td>
+							</tr>
+						</cfif>
+						<cfif trim(getAC.avionics) neq "">
+							<cfset avionics = getAC.avionics>
+							<cfset avionics = replace(avionics,"<p>","","ALL")>
+							<cfset avionics = replace(avionics,"</p>","<br>","ALL")>
+							<tr>
+								<td valign="top">
+									<span class="font"><b>Avionics:</b></span>
+								</td>
+								<td colspan="3">
+									<span class="font">#avionics#</span>
+								</td>
+							</tr>
+						</cfif>
+					</table>
+				</td>
+			</tr>
+
+			<tr>
+				<td colspan="4" align="center">
+				<!---<hr />--->
+				</td>
+				<td>&nbsp;</td>
+			</tr>
+			<tr>
+				<td colspan="4" align="center">
+					<span class="font3"><b>Contact Information</b></span>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="4" align="center">
+					<span class="font2"><b>Pacific Air Center</b></span>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="4" align="center">
+					<span class="font">2721 E Spring St.</span>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="4" align="center">
+					<span class="font">Long Beach, CA 90806</span>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="4" align="center">
+					<span class="font">(562) 513-5222</span>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="4" align="center">
+					<hr />
+				</td>
+				<td>&nbsp;</td>
+			</tr>
+			</tr>
+		</table>
+	</div>
+	<cfif not isPrint>
+		<div style="height:25px"><a href="index.cfm?p=101&rqst=#rqst#">Back to Inventory</a></div>
+	</cfif>
+</div>
